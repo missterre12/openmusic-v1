@@ -1,4 +1,4 @@
-const routes = (handler, authenticate) => [
+const routes = (handler) => [
     {
       method: 'POST',
       path: '/songs',
