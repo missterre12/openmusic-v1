@@ -1,3 +1,4 @@
+const autoBind = require('auto-bind');
 const ClientError = require('../../exceptions/ClientError');
 
 class AlbumsHandler {
@@ -5,10 +6,7 @@ class AlbumsHandler {
     this._service = service;
     this._validator = validator;
 
-    this.postAlbumHandler = this.postAlbumHandler.bind(this);
-    this.getAlbumByIdHandler = this.getAlbumByIdHandler.bind(this);
-    this.putAlbumByIdHandler = this.putAlbumByIdHandler.bind(this);
-    this.deleteAlbumByIdHandler = this.deleteAlbumByIdHandler.bind(this);
+    autoBind(this);
   }
 
   async postAlbumHandler(request, h) {
@@ -40,28 +38,30 @@ class AlbumsHandler {
       };
     } 
 
-  async putAlbumByIdHandler(request, h) {
+    async putAlbumByIdHandler(request, h) {
       this._validator.validateAlbumPayload(request.payload);
       const { id } = request.params;
       const { name, year } = request.payload;
-
+  
       await this._service.editAlbumById(id, { name, year });
-
+  
       return {
-        status: 'success',
-        message: 'Album berhasil diperbarui',
+          status: 'success',
+          message: 'Album berhasil diperbarui',
       };
-    } 
+  }  
 
   async deleteAlbumByIdHandler(request, h) {
-      const { id } = request.params;
-      await this._service.deleteAlbumById(id);
+    const { id } = request.params;
+  
+    await this._service.deleteAlbumById(id);
 
-      return {
-        status: 'success',
-        message: 'Album berhasil dihapus',
-      };
-    } 
+    return {
+      status: 'success',
+      message: 'Album berhasil dihapus',
+    };
   }
+  
+}
 
 module.exports = AlbumsHandler;

@@ -1,77 +1,128 @@
+const autoBind = require('auto-bind');
 const ClientError = require('../../exceptions/ClientError');
+const { NotFoundError } = require('../../exceptions/NotFoundError');
 
 class SongsHandler {
   constructor(service, validator) {
     this._service = service;
     this._validator = validator;
 
-    this.postSongHandler = this.postSongHandler.bind(this);
-    this.getSongsHandler = this.getSongsHandler.bind(this);
-    this.getSongByIdHandler = this.getSongByIdHandler.bind(this);
-    this.putSongByIdHandler = this.putSongByIdHandler.bind(this);
-    this.deleteSongByIdHandler = this.deleteSongByIdHandler.bind(this);
+    autoBind(this);
   }
 
   async postSongHandler(request, h) {
-      this._validator.validateSongPayload(request.payload);
-      const { title, year, genre, performer, duration, albumId } = request.payload;
-      const songId = await this._service.addSong({ title, year, genre, performer, duration, albumId });
+    const validationResult = this._validator.validateSongPayload(request.payload);
 
+    if (validationResult.error) {
       const response = h.response({
-        status: 'success',
-        message: 'Lagu berhasil ditambahkan',
-        data: {
-          songId,
-        },
+        status: 'fail',
+        message: validationResult.error.message,
       });
-      response.code(201);
+      response.code(400);
       return response;
+    }
+
+    const { title, year, genre, performer, duration, albumId } = request.payload;
+    const songId = await this._service.addSong({ title, year, genre, performer, duration, albumId });
+
+    const response = h.response({
+      status: 'success',
+      message: 'Lagu berhasil ditambahkan',
+      data: {
+        songId,
+      },
+    });
+    response.code(201);
+    return response;
   }
 
   async getSongsHandler() {
     const songs = await this._service.getSongs();
+    const sanitizedSongs = songs.map(({ id, title, performer }) => ({ id, title, performer }));
+
     return {
       status: 'success',
       data: {
-        songs,
+        songs: sanitizedSongs,
       },
     };
   }
 
   async getSongByIdHandler(request, h) {
-      const { id } = request.params;
-      const song = await this._service.getSongById(id);
-
-      return {
-        status: 'success',
-        data: {
-          song,
-        },
-      };
+    const { id } = request.params;
+    const song = await this._service.getSongById(id);
+  
+    if (!song) {
+      const response = h.response({
+        status: 'fail',
+        message: 'Lagu tidak ditemukan',
+      });
+      response.code(404); 
+      return response;
     }
+  
+    return {
+      status: 'success',
+      data: {
+        song,
+      },
+    };
+  }
+  
 
   async putSongByIdHandler(request, h) {
-      this._validator.validateSongPayload(request.payload);
-      const { id } = request.params;
-      const { title, year, genre, performer, duration, albumId } = request.payload;
-  
-      await this._service.updateSongById(id, { title, year, genre, performer, duration, albumId });
-  
-      return {
-        status: 'success',
-        message: 'Lagu berhasil diperbarui',
-      };
+    const { id } = request.params;
+    const validationResult = this._validator.validateSongPayload(request.payload);
+
+    if (validationResult.error) {
+      const response = h.response({
+        status: 'fail',
+        message: validationResult.error.message,
+      });
+      response.code(400);
+      return response;
     }
+
+    const { title, year, performer, genre, duration, albumId } = request.payload;
+
+    const songId = await this._service.updateSongById(id, { title, year, performer, genre, duration, albumId });
+
+    if (!songId) {
+      const response = h.response({
+        status: 'fail',
+        message: 'Gagal memperbarui lagu. Id tidak ditemukan',
+      });
+      response.code(404);
+      return response;
+    }
+
+    return {
+      status: 'success',
+      message: 'Lagu berhasil diperbarui',
+    };
+  }
+  
 
   async deleteSongByIdHandler(request, h) {
-      const { id } = request.params;
-      await this._service.deleteSongById(id);
-
-      return {
-        status: 'success',
-        message: 'Lagu berhasil dihapus',
-      };
+    const { id } = request.params;
+  
+    const songId = await this._service.deleteSongById(id);
+  
+    if (songId === null) { // Issue: songId will always be undefined
+      const response = h.response({
+        status: 'fail',
+        message: 'Lagu tidak ditemukan',
+      });
+      response.code(404);
+      return response;
     }
-}
-
-module.exports = SongsHandler;
+  
+    const successResponse = h.response({
+      status: 'success',
+      message: 'Lagu berhasil dihapus',
+    });
+    successResponse.code(200);
+    return successResponse;
+  }  
+}  
+  module.exports = SongsHandler;  
