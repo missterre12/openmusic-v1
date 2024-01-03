@@ -108,7 +108,7 @@ class SongsHandler {
   
     const songId = await this._service.deleteSongById(id);
   
-    if (songId === null) { // Issue: songId will always be undefined
+    if (songId === null) { 
       const response = h.response({
         status: 'fail',
         message: 'Lagu tidak ditemukan',
