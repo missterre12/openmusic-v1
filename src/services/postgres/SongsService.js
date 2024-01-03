@@ -74,6 +74,17 @@ class SongsService {
   
     return result.rows[0].id;
   }  
+
+  async searchSongs({ title, performer }) {
+    const query = 'SELECT id, title, performer FROM songs WHERE title ILIKE $1 AND performer ILIKE $2';
+  
+    const result = await this._pool.query({
+      text: query,
+      values: [`%${title}%`, `%${performer}%`],
+    });
+  
+    return result.rows.map(mapDBToModelSong);
+  }
 }
 
 module.exports = SongsService;

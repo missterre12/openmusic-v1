@@ -36,7 +36,20 @@ class SongsHandler {
     return response;
   }
 
-  async getSongsHandler() {
+  async getSongsHandler(request, h) {
+    const { title, performer } = request.query;
+
+    if (title || performer) {
+      const songs = await this._service.searchSongs({ title, performer });
+
+      return {
+        status: 'success',
+        data: {
+          songs,
+        },
+      };
+    }
+
     const songs = await this._service.getSongs();
     const sanitizedSongs = songs.map(({ id, title, performer }) => ({ id, title, performer }));
 
@@ -44,9 +57,9 @@ class SongsHandler {
       status: 'success',
       data: {
         songs: sanitizedSongs,
-      },
-    };
-  }
+      },
+    };
+  }
 
   async getSongByIdHandler(request, h) {
     const { id } = request.params;
@@ -69,7 +82,6 @@ class SongsHandler {
     };
   }
   
-
   async putSongByIdHandler(request, h) {
     const { id } = request.params;
     const validationResult = this._validator.validateSongPayload(request.payload);
@@ -101,7 +113,6 @@ class SongsHandler {
       message: 'Lagu berhasil diperbarui',
     };
   }
-  
 
   async deleteSongByIdHandler(request, h) {
     const { id } = request.params;
