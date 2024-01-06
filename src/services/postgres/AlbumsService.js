@@ -46,7 +46,7 @@ class AlbumsService {
     };
 
     const result = await this._pool.query(query);
-    return(result.rows);
+    return (result.rows);
   }
 
   async editAlbumById(albumId, { name, year }) {
@@ -71,9 +71,9 @@ class AlbumsService {
       text: 'DELETE FROM albums WHERE id = $1',
       values: [albumId],
     };
-  
+
     const result = await this._pool.query(query);
-  
+
     if (!result.rowCount) {
       throw new NotFoundError('Album gagal dihapus. Id tidak ditemukan');
     }
